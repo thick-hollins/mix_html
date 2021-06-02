@@ -1,16 +1,19 @@
-function toCMYK(hexString) {
+function hexToRGB(hexString) {
   let hexes = hexString.match(/[^#]{1,2}/g); 
-  let rgb =  hexes.map(hex => parseInt(hex, 16));
-  let [r, g, b] = rgb;
+  let [r, g, b] =  hexes.map(hex => parseInt(hex, 16));
+  return {'r': r, 'g': g, 'b': b}
+}
+
+function RGBtoCMYK(rgb) {
   let k;
-  if (r === 0 || g === 0 || b === 0) {
+  if (rgb.r === 0 || rgb.g === 0 || rgb.b === 0) {
     k = 0
   } else {
-    k = Math.min(1 - (r / 255), 1 - (g / 255), 1 - (b / 255));
+    k = Math.min(1 - (rgb.r / 255), 1 - (rgb.g / 255), 1 - (rgb.b / 255));
   }
-  let c = (1 - (r / 255) - k) / (1 - k);
-  let m = (1 - (g / 255) - k) / (1 - k);
-  let y = (1 - (b / 255) - k) / (1 - k);
+  let c = (1 - (rgb.r / 255) - k) / (1 - k);
+  let m = (1 - (rgb.g / 255) - k) / (1 - k);
+  let y = (1 - (rgb.b / 255) - k) / (1 - k);
   
   return {'c': c, 'm': m, 'y': y, 'k': k}
 }
@@ -23,7 +26,7 @@ function mix(c1, c2) {
   return {c: cAvg, m: mAvg, y: yAvg, k: kAvg}
 }
 
-function toRGB(cmyk) {
+function CMYKtoRGB(cmyk) {
   let r = Math.round(255 * ((1 - cmyk.c) * (1 - cmyk.k)));
   let g = Math.round(255 * ((1 - cmyk.m) * (1 - cmyk.k)));
   let b = Math.round(255 * ((1 - cmyk.y) * (1 - cmyk.k)));
@@ -38,7 +41,7 @@ function generateMix() {
   }
   let c1 = colours[randomIndex1];
   let c2 = colours[randomIndex2];
-  return {'c1': c1, 'c2': c2, 'rgb': toRGB(mix(c1, c2))}
+  return {'c1': c1, 'c2': c2, 'rgb': CMYKtoRGB(mix(c1, c2))}
 }
 
 function similarColour1(correctMix) {
@@ -89,27 +92,97 @@ function generateOptionsArray() {
   return [firstOption, secondOption, options[0]]
 }
 
+function reformatRGB(stringRGB) {
+  let array = stringRGB.match(/\d+/g)
+  return {'r': array[0], 'g': array[1], 'b': array[2]}
+}
 
-let colours = names;
-colours.forEach(colour => colour.cmyk = toCMYK(colour.hex))
+function isRGBDark(rgb) {
+  let brightness = ((rgb.r * 299) + (rgb.g * 587) + (rgb.b * 114)) / 1000;
+  return brightness < 155
+}
 
-let options = generateOptionsArray();
-let c1; let c2; let correctIndex;
-let colourValues = [];
-for (let [i, option] of options.entries()) {
-  colourValues.push(Object.values(option)[0].rgb);
-  if ("mix" in option) {
-    c1 = option.mix.c1;
-    c2 = option.mix.c2;
-    correctIndex = i;
+function setTextColour(element) {
+  if ( isRGBDark(reformatRGB(element.style.backgroundColor))) {
+    element.style.color = "white"
+  } else {
+    element.style.color = "black"
   }
 }
 
+function drawResult(buttonClicked, c1, c2, correctIndex) {
+  let result;
+  if (buttonClicked.classList.contains('correct')) {
+    result = 'correct'
+  }
+  guessButtons.forEach(button => button.classList.add('disabled'))
+  resultContainer.classList.remove('hide');
+  mix1.style.backgroundColor = c1.hex;
+  mix1.innerHTML = c1.name
+  mix2.style.backgroundColor = c2.hex;
+  mix2.innerHTML = c2.name
+  setTextColour(mix1);
+  setTextColour(mix2);
+  setTextColour(buttonClicked);
+  playCount++;
+  if (result === 'correct') {
+    correctCount++;
+    buttonClicked.innerHTML = "☒"
+    document.getElementById('result-text').innerHTML = 
+      "Correct! The colour you clicked is a mixture of "
+  } else {
+    buttonClicked.innerHTML = "✗";
+    let correctButton = document.getElementById('btn' + correctIndex);
+    setTextColour(correctButton);
+    correctButton.innerHTML = "☐"; 
+    resultText.innerHTML = 
+      "Incorrect! The colour you clicked is not a mixture of "
+  }
+  resultCounter.innerHTML = `${correctCount} out of ${playCount} answers correct`
+  next.onclick = () => drawQuestion();
+}
+
+function drawQuestion() {
+  resultContainer.classList.add('hide');
+  for (button of guessButtons) {
+    button.innerHTML = "";
+    button.classList.remove('correct')
+    button.classList.remove('disabled')
+  }
+  let options = generateOptionsArray();
+  let c1; let c2; let correctIndex;
+  let colourValues = [];
+  for (let [i, option] of options.entries()) {
+    colourValues.push(Object.values(option)[0].rgb);
+    if ("mix" in option) {
+      c1 = option.mix.c1;
+      c2 = option.mix.c2;
+      correctIndex = i;
+    }
+  }
+  questionContainer.innerHTML = `Which colour is a mixture of <i>${c1.name}</i> and <i>${c2.name}</i>?`
+  btn0.style.backgroundColor = formatRGB(colourValues[0]);
+  btn1.style.backgroundColor = formatRGB(colourValues[1]);
+  btn2.style.backgroundColor = formatRGB(colourValues[2]);
+  [btn0, btn1, btn2][correctIndex].classList.add("correct");
+  btn0.onclick = () => drawResult(btn0, c1, c2, correctIndex);
+  btn1.onclick = () => drawResult(btn1, c1, c2, correctIndex);
+  btn2.onclick = () => drawResult(btn2, c1, c2, correctIndex);
+}
+
+let colours = names;
+colours.forEach(colour => colour.cmyk = RGBtoCMYK(hexToRGB(colour.hex)));
 const questionContainer = document.getElementById('question');
-questionContainer.innerHTML = `Which colour is a mixture of <i>${c1.name}</i> and <i>${c2.name}</i>? ${correctIndex}`
+const guessButtons = document.querySelectorAll('.guess-button');
+const btn0 = document.getElementById("btn0");
 const btn1 = document.getElementById("btn1");
 const btn2 = document.getElementById("btn2");
-const btn3 = document.getElementById("btn3");
-btn1.style.backgroundColor = formatRGB(colourValues[0]);
-btn2.style.backgroundColor = formatRGB(colourValues[1]);
-btn3.style.backgroundColor = formatRGB(colourValues[2]);
+const next = document.getElementById('next');
+const resultText = document.getElementById('result-text');
+const resultContainer = document.getElementById('result-container');
+const mix1 = document.getElementById('mix1');
+const mix2 = document.getElementById('mix2');
+const resultCounter = document.getElementById('result-counter');
+let playCount = 0;
+let correctCount = 0;
+drawQuestion();

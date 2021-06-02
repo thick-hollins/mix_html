@@ -1,9 +1,15 @@
-button {
+.guess-button {
     height: 200px;
     width: 300px;
+    font-size: 5em;
+    vertical-align: middle;
+    
 }
 
-div {
-    height: 100px;
-    width: 200px;
+.disabled {
+    pointer-events: none;
+}
+
+.hide {
+    display: none;
 }

@@ -8,17 +8,22 @@
     <link href="style.css" rel="stylesheet">
 </head>
 <body>
-    <p id="question"></p>
-    <button id="btn1"></button>
-    <br>
-    <button id="btn2"></button>
-    <br>
-    <button id="btn3"></button>
-    <br>
-    <br>
-    <div id="mix1"></div>
-    <br>
-    <div id="mix2"></div>
+    <div id="game-container">
+        <div id="question"></div>
+        <div id="button-container">
+            <button id="btn0" class="guess-button"></button>
+            <button id="btn1" class="guess-button"></button>
+            <button id="btn2" class="guess-button"></button>
+        </div>
+        <div id="result-container">
+            <p id="result-text"></p>
+            <button id="mix1" class="mix"></button>
+            and
+            <button id="mix2" class="mix"></button>
+            <p id="result-counter"></p>
+            <button id="next">Next</button>
+        </div>
+    </div>
     <script src="names.json"></script>
     <script src="mix.js"></script>
 </body>
