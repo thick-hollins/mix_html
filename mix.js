@@ -128,7 +128,7 @@ function drawResult(buttonClicked, c1, c2, correctIndex) {
   if (result === 'correct') {
     correctCount++;
     buttonClicked.innerHTML = "☒"
-    document.getElementById('result-text').innerHTML = 
+    ResultText.innerHTML = 
       "Correct! The colour you clicked is a mixture of "
   } else {
     buttonClicked.innerHTML = "✗";
